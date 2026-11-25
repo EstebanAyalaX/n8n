@@ -1,0 +1,43 @@
+// Datos geográficos compartidos por los scripts.
+// Coordenadas aproximadas de las estaciones del Metro Valparaíso (Merval).
+export const ESTACIONES = [
+	{ nombre: 'Puerto', lat: -33.0386, lng: -71.629, comuna: 'Valparaíso' },
+	{ nombre: 'Bellavista', lat: -33.0442, lng: -71.6203, comuna: 'Valparaíso' },
+	{ nombre: 'Francia', lat: -33.0465, lng: -71.613, comuna: 'Valparaíso' },
+	{ nombre: 'Barón', lat: -33.043, lng: -71.604, comuna: 'Valparaíso' },
+	{ nombre: 'Portales', lat: -33.03, lng: -71.591, comuna: 'Valparaíso' },
+	{ nombre: 'Recreo', lat: -33.0245, lng: -71.578, comuna: 'Viña del Mar' },
+	{ nombre: 'Miramar', lat: -33.022, lng: -71.563, comuna: 'Viña del Mar' },
+	{ nombre: 'Viña del Mar', lat: -33.027, lng: -71.552, comuna: 'Viña del Mar' },
+	{ nombre: 'Hospital', lat: -33.031, lng: -71.541, comuna: 'Viña del Mar' },
+	{ nombre: 'Chorrillos', lat: -33.035, lng: -71.528, comuna: 'Viña del Mar' },
+	{ nombre: 'El Salto', lat: -33.041, lng: -71.511, comuna: 'Viña del Mar' },
+	{ nombre: 'Quilpué', lat: -33.048, lng: -71.443, comuna: 'Quilpué' },
+	{ nombre: 'El Sol', lat: -33.05, lng: -71.432, comuna: 'Quilpué' },
+	{ nombre: 'El Belloto', lat: -33.051, lng: -71.411, comuna: 'Quilpué' },
+	{ nombre: 'Las Américas', lat: -33.05, lng: -71.395, comuna: 'Villa Alemana' },
+	{ nombre: 'La Concepción', lat: -33.049, lng: -71.385, comuna: 'Villa Alemana' },
+	{ nombre: 'Villa Alemana', lat: -33.045, lng: -71.373, comuna: 'Villa Alemana' },
+	{ nombre: 'Sargento Aldea', lat: -33.043, lng: -71.362, comuna: 'Villa Alemana' },
+	{ nombre: 'Peñablanca', lat: -33.04, lng: -71.35, comuna: 'Villa Alemana' },
+	{ nombre: 'Limache', lat: -32.985, lng: -71.275, comuna: 'Limache' },
+];
+
+export function distanciaMetros(a, b) {
+	const R = 6371000;
+	const rad = (d) => (d * Math.PI) / 180;
+	const dLat = rad(b.lat - a.lat);
+	const dLng = rad(b.lng - a.lng);
+	const h =
+		Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+	return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+export function estacionMasCercana(punto) {
+	let mejor = null;
+	for (const e of ESTACIONES) {
+		const d = distanciaMetros(punto, e);
+		if (!mejor || d < mejor.distancia) mejor = { nombre: e.nombre, distancia: Math.round(d) };
+	}
+	return mejor;
+}

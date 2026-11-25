@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Radar Eje Metro · Arriendos y ventas Valparaíso–Limache</title>
+	<link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+	<link rel="stylesheet" href="vendor/markercluster/MarkerCluster.css" />
+	<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<header class="cabecera">
+		<div class="marca">
+			<h1>Radar <span>Eje Metro</span></h1>
+			<p id="subtitulo">Casas y departamentos en arriendo y venta · Valparaíso, Viña del Mar, Quilpué, Villa Alemana y Limache</p>
+		</div>
+		<div class="aviso-ejemplo" role="note">Datos de ejemplo ficticios</div>
+	</header>
+
+	<form class="filtros" id="filtros" autocomplete="off">
+		<div class="segmentado" role="radiogroup" aria-label="Operación">
+			<label><input type="radio" name="operacion" value="arriendo" checked /><span>Arriendo</span></label>
+			<label><input type="radio" name="operacion" value="venta" /><span>Venta</span></label>
+		</div>
+		<select name="comuna" aria-label="Comuna"><option value="">Comuna: todas</option></select>
+		<select name="tipo" aria-label="Tipo">
+			<option value="">Tipo: todos</option>
+			<option>Departamento</option>
+			<option>Casa</option>
+		</select>
+		<select name="dormitorios" aria-label="Dormitorios">
+			<option value="">Dormitorios</option>
+			<option value="1">1+</option>
+			<option value="2">2+</option>
+			<option value="3">3+</option>
+			<option value="4">4+</option>
+		</select>
+		<select name="metro" aria-label="Distancia al metro">
+			<option value="">Metro: cualquier distancia</option>
+			<option value="500">A ≤ 500 m del metro</option>
+			<option value="1000">A ≤ 1 km del metro</option>
+			<option value="2000">A ≤ 2 km del metro</option>
+		</select>
+		<select name="validacion" aria-label="Validación">
+			<option value="">Validación: todas</option>
+			<option value="validado">Solo validadas</option>
+			<option value="exacta">Con ubicación exacta</option>
+		</select>
+		<input name="min" type="number" inputmode="numeric" placeholder="Mín $" aria-label="Precio mínimo" />
+		<input name="max" type="number" inputmode="numeric" placeholder="Máx $" aria-label="Precio máximo" />
+		<input name="q" type="search" class="buscar" placeholder="Buscar sector, calle, estación…" aria-label="Buscar" />
+		<button type="reset" class="limpiar" title="Limpiar filtros" aria-label="Limpiar filtros">✕</button>
+	</form>
+
+	<main class="contenido">
+		<section class="mapa-wrap">
+			<div id="mapa" aria-label="Mapa de propiedades"></div>
+			<div class="leyenda">
+				<span><i class="punto validado"></i>Validada</span>
+				<span><i class="punto parcial"></i>Dirección parcial</span>
+				<span><i class="punto sin-validar"></i>Ubicación aproximada</span>
+				<span><i class="linea-metro"></i>Metro Valparaíso</span>
+			</div>
+		</section>
+
+		<section class="lista-wrap">
+			<div class="lista-cabecera">
+				<p id="conteo" aria-live="polite"></p>
+				<select id="orden" aria-label="Ordenar">
+					<option value="precio-asc">Menor precio</option>
+					<option value="precio-desc">Mayor precio</option>
+					<option value="metro">Más cerca del metro</option>
+					<option value="reciente">Más recientes</option>
+					<option value="m2">Precio por m²</option>
+				</select>
+			</div>
+			<p class="depuracion" id="depuracion"></p>
+			<div id="lista" class="lista"></div>
+			<button id="mas" class="mas" hidden>Ver más</button>
+		</section>
+	</main>
+
+	<script src="vendor/leaflet/leaflet.js"></script>
+	<script src="vendor/markercluster/leaflet.markercluster.js"></script>
+	<script src="data/estaciones.js"></script>
+	<script src="data/propiedades.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>

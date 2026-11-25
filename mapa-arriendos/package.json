@@ -1,0 +1,10 @@
+{
+	"name": "radar-eje-metro",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"ejemplo": "node scripts/generar-ejemplo.mjs",
+		"depurar": "node scripts/depurar.mjs",
+		"servir": "npx --yes serve ."
+	}
+}

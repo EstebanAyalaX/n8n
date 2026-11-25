@@ -1,7 +1,7 @@
 // Depura anuncios crudos y genera los datos que consume el mapa.
 //   1. Normaliza precio, textos y campos.
 //   2. Oculta teléfonos y correos (título y descripción).
-//   3. Descarta precios falsos (fuera de rango o absurdos para su comuna).
+//   3. Acepta cualquier rango de precio; solo descarta precios vacíos o ≤ 0.
 //   4. Ubica en el mapa: exacta si hay coordenadas, aproximada si solo hay sector.
 //   5. Fusiona duplicados publicados en varias fuentes.
 //   6. Calcula la estación de metro más cercana.
@@ -12,7 +12,7 @@ import { ESTACIONES, distanciaMetros, estacionMasCercana } from './geo.mjs';
 
 const entrada = process.argv[2] ?? new URL('../data/crudos-ejemplo.json', import.meta.url);
 const crudos = JSON.parse(readFileSync(entrada, 'utf8'));
-const reporte = { recibidos: crudos.length, descartados: { precio_falso: 0, datos_incompletos: 0 }, duplicados_fusionados: 0, telefonos_ocultos: 0 };
+const reporte = { recibidos: crudos.length, descartados: { precio_invalido: 0, datos_incompletos: 0 }, duplicados_fusionados: 0, telefonos_ocultos: 0 };
 
 // ---------- 1. Normalización ----------
 function parsePrecio(p) {
@@ -46,12 +46,9 @@ function ocultarContacto(texto) {
 	return limpio.replace(/(interesados\s+)?(llamar|whatsapp|wsp|contactar)[^.]*\[(teléfono|correo) oculto\][^.]*\.?/gi, 'Contactar por el anuncio original.');
 }
 
-// ---------- 3. Precios falsos ----------
-const RANGO = { arriendo: { CLP: [120000, 4000000] }, venta: { UF: [600, 40000] } };
-// Patrones típicos de precio gancho: 11111, 99999, 123456…
-const precioPatron = (v) => /^(\d)\1{3,}$|^1234|^9{4,}/.test(String(Math.round(v)));
-
-let items = [];
+// ---------- 3. Precio ----------
+// Se acepta cualquier rango de precio; solo se descartan anuncios sin precio válido (vacío o ≤ 0).
+const items = [];
 for (const c of crudos) {
 	const precio = parsePrecio(c.precio);
 	if (!precio || !c.operacion || !c.comuna) {
@@ -59,32 +56,12 @@ for (const c of crudos) {
 		continue;
 	}
 	precio.moneda ??= c.operacion === 'venta' ? 'UF' : 'CLP';
-	const rango = RANGO[c.operacion]?.[precio.moneda];
-	if (!rango || precio.valor < rango[0] || precio.valor > rango[1] || precioPatron(precio.valor)) {
-		reporte.descartados.precio_falso++;
+	if (precio.valor <= 0) {
+		reporte.descartados.precio_invalido++;
 		continue;
 	}
 	items.push({ ...c, precio: precio.valor, moneda: precio.moneda });
 }
-
-// Comparación relativa: precio por m² contra la mediana de su comuna y operación.
-const mediana = (arr) => {
-	const s = [...arr].sort((a, b) => a - b);
-	return s[Math.floor(s.length / 2)];
-};
-const grupos = {};
-for (const it of items) if (it.m2) (grupos[`${it.operacion}|${it.comuna}`] ??= []).push(it.precio / it.m2);
-const medianas = Object.fromEntries(Object.entries(grupos).map(([k, v]) => [k, mediana(v)]));
-items = items.filter((it) => {
-	const m = medianas[`${it.operacion}|${it.comuna}`];
-	if (!it.m2 || !m) return true;
-	const r = it.precio / it.m2 / m;
-	if (r < 0.5 || r > 2.5) {
-		reporte.descartados.precio_falso++;
-		return false;
-	}
-	return true;
-});
 
 // ---------- 4. Ubicación y validación ----------
 const centroSector = {};

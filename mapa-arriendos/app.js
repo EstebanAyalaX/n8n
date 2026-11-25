@@ -22,7 +22,7 @@
 	const fecha = new Date(reporte.actualizado).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
 	document.getElementById('depuracion').textContent =
 		`Depuración: ${num.format(reporte.recibidos)} anuncios recibidos · ${reporte.duplicados_fusionados} duplicados fusionados · ` +
-		`${reporte.descartados.precio_falso} precios falsos descartados · ${reporte.telefonos_ocultos} teléfonos ocultos · actualizado ${fecha}`;
+		`${reporte.telefonos_ocultos} teléfonos ocultos · actualizado ${fecha}`;
 
 	const comunas = [...new Set(propiedades.map((p) => p.comuna))].sort();
 	const selComuna = form.elements.comuna;
@@ -79,8 +79,6 @@
 	}
 
 	function filtrar(f) {
-		const min = Number(f.min) || 0;
-		const max = Number(f.max) || Infinity;
 		return propiedades.filter(
 			(p) =>
 				p.operacion === f.operacion &&
@@ -89,8 +87,6 @@
 				(!f.dormitorios || p.dormitorios >= Number(f.dormitorios)) &&
 				(!f.metro || p.estacion.distancia <= Number(f.metro)) &&
 				(!f.validacion || (f.validacion === 'exacta' ? p.ubicacion === 'exacta' : p.validacion === f.validacion)) &&
-				p.precio >= min &&
-				p.precio <= max &&
 				(!f.q ||
 					[p.titulo, p.sector, p.direccion, p.comuna, p.estacion.nombre, p.descripcion].join(' ').toLowerCase().includes(f.q)),
 		);
@@ -110,10 +106,6 @@
 
 	function aplicar() {
 		const f = leerFiltros();
-		const moneda = f.operacion === 'venta' ? 'UF' : '$';
-		form.elements.min.placeholder = `Mín ${moneda}`;
-		form.elements.max.placeholder = `Máx ${moneda}`;
-
 		resultados = filtrar(f).sort(ORDEN[ordenEl.value]);
 		cluster.clearLayers();
 		cluster.addLayers(resultados.map((p) => marcadores.get(p.id)));

@@ -38,9 +38,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100vh; }
 	height: 36px; border: 1px solid var(--linea); border-radius: 8px; background: #fff;
 	padding: 0 10px; font: inherit; font-size: 0.85rem; color: var(--tinta);
 }
-.filtros input[type='number'] { width: 100px; }
 .filtros .buscar { flex: 1 1 160px; min-width: 140px; }
-.filtros input[type='number'] { width: 92px; }
 .filtros .limpiar { cursor: pointer; color: var(--suave); }
 .filtros .limpiar:hover { color: var(--tinta); }
 .segmentado { display: inline-flex; border: 1px solid var(--linea); border-radius: 8px; overflow: hidden; }
@@ -123,5 +121,4 @@ body { margin: 0; display: flex; flex-direction: column; height: 100vh; }
 	.lista-wrap { border-left: 0; overflow: visible; }
 	.cabecera { flex-direction: column; align-items: flex-start; }
 	.filtros { position: static; }
-	.filtros input[type='number'] { width: calc(50% - 4px); }
 }

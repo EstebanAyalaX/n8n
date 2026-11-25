@@ -28,7 +28,7 @@ fuentes → data/crudos-*.json → scripts/depurar.mjs → data/propiedades.js �
 | Paso | Regla |
 | --- | --- |
 | Teléfonos y correos | Se reemplazan por `[teléfono oculto]` / `[correo oculto]` en título y descripción. |
-| Precio | Se acepta cualquier rango de precio. Solo se descartan anuncios sin precio o con precio ≤ 0. |
+| Precio | Arriendos desde **$400.000/mes** y ventas desde **UF 1.500**, sin tope superior (`MINIMO` en el script). Se descartan precios vacíos, ≤ 0 o gancho (`11111`, `1234…`, `9999…`). |
 | Duplicados | Misma operación, tipo, dormitorios y baños, precio ±2 %, m² ±5 % y a menos de 200 m (o mismo sector si uno no tiene coordenadas). Se fusionan y se guardan todas las fuentes. |
 | Ubicación | Con coordenadas y número de calle → **validada**; calle sin número → **parcial**; solo sector → **aproximada** (se ubica en el centro del sector). |
 | Metro | Calcula la estación más cercana y la distancia (coordenadas de estaciones aproximadas, en `scripts/geo.mjs`). |

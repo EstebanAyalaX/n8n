@@ -1,7 +1,7 @@
 // Depura anuncios crudos y genera los datos que consume el mapa.
 //   1. Normaliza precio, textos y campos.
 //   2. Oculta teléfonos y correos (título y descripción).
-//   3. Acepta cualquier rango de precio; solo descarta precios vacíos o ≤ 0.
+//   3. Arriendos desde $400.000 y ventas desde UF 1.500 (sin tope); descarta precios gancho.
 //   4. Ubica en el mapa: exacta si hay coordenadas, aproximada si solo hay sector.
 //   5. Fusiona duplicados publicados en varias fuentes.
 //   6. Calcula la estación de metro más cercana.
@@ -12,7 +12,7 @@ import { ESTACIONES, distanciaMetros, estacionMasCercana } from './geo.mjs';
 
 const entrada = process.argv[2] ?? new URL('../data/crudos-ejemplo.json', import.meta.url);
 const crudos = JSON.parse(readFileSync(entrada, 'utf8'));
-const reporte = { recibidos: crudos.length, descartados: { precio_invalido: 0, datos_incompletos: 0 }, duplicados_fusionados: 0, telefonos_ocultos: 0 };
+const reporte = { recibidos: crudos.length, descartados: { precio_falso: 0, bajo_minimo: 0, datos_incompletos: 0 }, duplicados_fusionados: 0, telefonos_ocultos: 0 };
 
 // ---------- 1. Normalización ----------
 function parsePrecio(p) {
@@ -47,7 +47,10 @@ function ocultarContacto(texto) {
 }
 
 // ---------- 3. Precio ----------
-// Se acepta cualquier rango de precio; solo se descartan anuncios sin precio válido (vacío o ≤ 0).
+// Foco en precios reales: arriendos desde $400.000/mes y ventas desde UF 1.500, sin tope superior.
+// Se descartan precios vacíos, ≤ 0 o con patrón de precio gancho (11111, 1234…, 9999…).
+const MINIMO = { arriendo: 400000, venta: 1500 };
+const precioGancho = (v) => /^(\d)\1{3,}$|^1234|^9{4,}/.test(String(Math.round(v)));
 const items = [];
 for (const c of crudos) {
 	const precio = parsePrecio(c.precio);
@@ -56,8 +59,12 @@ for (const c of crudos) {
 		continue;
 	}
 	precio.moneda ??= c.operacion === 'venta' ? 'UF' : 'CLP';
-	if (precio.valor <= 0) {
-		reporte.descartados.precio_invalido++;
+	if (precio.valor <= 0 || precioGancho(precio.valor)) {
+		reporte.descartados.precio_falso++;
+		continue;
+	}
+	if (precio.valor < (MINIMO[c.operacion] ?? 0)) {
+		reporte.descartados.bajo_minimo++;
 		continue;
 	}
 	items.push({ ...c, precio: precio.valor, moneda: precio.moneda });

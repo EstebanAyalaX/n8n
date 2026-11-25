@@ -21,7 +21,7 @@
 	// ---------- Encabezado y resumen de depuración ----------
 	const fecha = new Date(reporte.actualizado).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
 	document.getElementById('depuracion').textContent =
-		`Depuración: ${num.format(reporte.recibidos)} anuncios recibidos · ${reporte.duplicados_fusionados} duplicados fusionados · ` +
+		`Depuración: ${num.format(reporte.recibidos)} anuncios recibidos · ${reporte.duplicados_fusionados} duplicados fusionados · ${reporte.descartados.precio_falso} precios falsos y ${reporte.descartados.bajo_minimo} bajo el precio mínimo descartados · ` +
 		`${reporte.telefonos_ocultos} teléfonos ocultos · actualizado ${fecha}`;
 
 	const comunas = [...new Set(propiedades.map((p) => p.comuna))].sort();

@@ -31,12 +31,31 @@ const FUENTES = ['Portal', 'Marketplace', 'Corredora', 'Clasificados'];
 const FACTOR_COMUNA = { 'Viña del Mar': 1, Valparaíso: 0.9, Quilpué: 0.8, 'Villa Alemana': 0.78, Limache: 0.75 };
 const COSTERAS = new Set(['Puerto', 'Bellavista', 'Francia', 'Barón', 'Portales', 'Recreo', 'Miramar', 'Viña del Mar']);
 
-function telefono() {
-	const n = `9${Math.floor(entre(10000000, 99999999))}`;
+// Formatea el teléfono de distintas maneras, como lo escribe la gente.
+function telefono(n) {
 	return elegir([`+56 ${n[0]} ${n.slice(1, 5)} ${n.slice(5)}`, `+569${n.slice(1)}`, n, `${n.slice(0, 1)}-${n.slice(1, 5)}-${n.slice(5)}`]);
 }
 
+// Anunciantes: unos pocos con muchos avisos (corredoras / inversionistas) y el resto
+// particulares con un solo aviso. Cada uno tiene un teléfono y un perfil distinto en cada fuente.
+let siguientePerfil = 1000;
+const nuevoAnunciante = () => ({
+	telefono: `9${Math.floor(entre(10000000, 99999999))}`,
+	perfiles: Object.fromEntries(FUENTES.map((f) => [f, `u${siguientePerfil++}`])),
+});
+const CON_VARIOS = Array.from({ length: 12 }, (_, i) => ({ ...nuevoAnunciante(), peso: [14, 10, 8, 6, 5, 4, 3, 3, 2, 2, 2, 2][i] }));
+const PESO_TOTAL = CON_VARIOS.reduce((s, a) => s + a.peso, 0);
+function elegirAnunciante() {
+	if (rnd() > 0.38) return nuevoAnunciante(); // particular
+	let x = rnd() * PESO_TOTAL;
+	return CON_VARIOS.find((a) => (x -= a.peso) < 0) ?? CON_VARIOS[0];
+}
+// Datos del anunciante que trae cada fuente: perfil (a veces) y teléfono en el texto (a veces).
+const perfilEn = (an, fuente) => (rnd() < 0.6 ? `${fuente}:${an.perfiles[fuente]}` : null);
+
 function anuncio(i) {
+	const an = elegirAnunciante();
+	const fuente = elegir(FUENTES);
 	const est = elegir(ESTACIONES);
 	const comuna = est.comuna;
 	const sector = elegir(SECTORES[comuna]);
@@ -72,14 +91,15 @@ function anuncio(i) {
 		`Excelente ubicación en ${sector}, ${comuna}. ${rnd() < 0.5 ? 'Con estacionamiento.' : 'Sin estacionamiento.'}`,
 		`${tipo} recién pintado, vista despejada. Gastos comunes bajos.`,
 	]);
-	if (rnd() < 0.35) descripcion += ` Interesados llamar o WhatsApp ${telefono()}.`;
+	if (rnd() < 0.45) descripcion += ` Interesados llamar o WhatsApp ${telefono(an.telefono)}.`;
 
 	// Precios gancho / falsos.
 	if (rnd() < 0.045) precio = elegir([1, 1000, 11111, 99999999, 123456]);
 
 	return {
 		id_fuente: `ej-${i}`,
-		fuente: elegir(FUENTES),
+		fuente,
+		perfil_anunciante: perfilEn(an, fuente),
 		url: null,
 		titulo: `${tipo} ${dormitorios}D ${banos}B en ${sector}`,
 		descripcion,
@@ -95,6 +115,7 @@ function anuncio(i) {
 		lat: coords?.lat ?? null,
 		lng: coords?.lng ?? null,
 		publicado: new Date(Date.UTC(2026, 10, 25) - Math.floor(entre(0, 30)) * 864e5).toISOString().slice(0, 10),
+		_an: an,
 	};
 }
 
@@ -104,10 +125,12 @@ for (let i = 0; i < CANTIDAD; i++) {
 	crudos.push(a);
 	// ~9 %: el mismo aviso publicado en otra fuente con pequeñas variaciones.
 	if (rnd() < 0.09) {
+		const fuente = elegir(FUENTES.filter((f) => f !== a.fuente));
 		crudos.push({
 			...a,
 			id_fuente: `${a.id_fuente}-dup`,
-			fuente: elegir(FUENTES.filter((f) => f !== a.fuente)),
+			fuente,
+			perfil_anunciante: perfilEn(a._an, fuente),
 			titulo: a.titulo.toUpperCase() + elegir(['!!', ' - OPORTUNIDAD', '', ' (disponible)']),
 			lat: a.lat && a.lat + entre(-0.0004, 0.0004),
 			lng: a.lng && a.lng + entre(-0.0004, 0.0004),
@@ -115,5 +138,6 @@ for (let i = 0; i < CANTIDAD; i++) {
 	}
 }
 
+for (const c of crudos) delete c._an;
 writeFileSync(new URL('../data/crudos-ejemplo.json', import.meta.url), JSON.stringify(crudos, null, 1));
 console.log(`Generados ${crudos.length} anuncios crudos de ejemplo → data/crudos-ejemplo.json`);

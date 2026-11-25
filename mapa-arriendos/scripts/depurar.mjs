@@ -5,6 +5,8 @@
 //   4. Ubica en el mapa: exacta si hay coordenadas, aproximada si solo hay sector.
 //   5. Fusiona duplicados publicados en varias fuentes.
 //   6. Calcula la estación de metro más cercana.
+//   7. Agrupa avisos del mismo anunciante (mismo teléfono o mismo perfil en la fuente).
+//      El teléfono solo se usa para agrupar; nunca se guarda ni se publica.
 //
 // Uso: node scripts/depurar.mjs [entrada.json]   (por defecto data/crudos-ejemplo.json)
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -36,7 +38,7 @@ function limpiarTitulo(t) {
 }
 
 // ---------- 2. Teléfonos y correos ----------
-const RE_TEL = /(\+?\s?56[\s.-]?)?\b9[\s.-]?\d{4}[\s.-]?\d{4}\b/g;
+const RE_TEL = /(?:\+?\s?56[\s.-]?|(?<!\d))9[\s.-]?\d{4}[\s.-]?\d{4}(?!\d)/g;
 const RE_MAIL = /[\w.+-]+@[\w-]+\.[\w.]+/g;
 function ocultarContacto(texto) {
 	if (!texto) return texto;
@@ -44,6 +46,13 @@ function ocultarContacto(texto) {
 	const limpio = texto.replace(RE_TEL, () => (n++, '[teléfono oculto]')).replace(RE_MAIL, () => (n++, '[correo oculto]'));
 	reporte.telefonos_ocultos += n;
 	return limpio.replace(/(interesados\s+)?(llamar|whatsapp|wsp|contactar)[^.]*\[(teléfono|correo) oculto\][^.]*\.?/gi, 'Contactar por el anuncio original.');
+}
+
+// Claves de contacto para reconocer al anunciante (teléfono normalizado y perfil de la fuente).
+function clavesContacto(c) {
+	const texto = `${c.titulo ?? ''} ${c.descripcion ?? ''}`;
+	const tels = (texto.match(RE_TEL) ?? []).map((t) => `tel:${t.replace(/\D/g, '').slice(-9)}`);
+	return new Set([...tels, ...(c.perfil_anunciante ? [`perfil:${c.perfil_anunciante}`] : [])]);
 }
 
 // ---------- 3. Precio ----------
@@ -67,7 +76,7 @@ for (const c of crudos) {
 		reporte.descartados.bajo_minimo++;
 		continue;
 	}
-	items.push({ ...c, precio: precio.valor, moneda: precio.moneda });
+	items.push({ ...c, precio: precio.valor, moneda: precio.moneda, claves: clavesContacto(c) });
 }
 
 // ---------- 4. Ubicación y validación ----------
@@ -107,18 +116,48 @@ const unicos = [];
 for (const it of items) {
 	const previo = unicos.find((u) => esDuplicado(u, it));
 	if (!previo) {
-		unicos.push({ ...it, fuentes: [{ fuente: it.fuente, url: it.url }] });
+		unicos.push({ ...it, claves: new Set(it.claves), fuentes: [{ fuente: it.fuente, url: it.url }] });
 		continue;
 	}
 	reporte.duplicados_fusionados++;
 	previo.fuentes.push({ fuente: it.fuente, url: it.url });
+	for (const k of it.claves) previo.claves.add(k);
 	if (PESO[it.validacion] > PESO[previo.validacion]) {
 		Object.assign(previo, { lat: it.lat, lng: it.lng, direccion: it.direccion, ubicacion: it.ubicacion, validacion: it.validacion });
 	}
 	if (it.publicado < previo.publicado) previo.publicado = it.publicado;
 }
 
-// ---------- 6. Salida ----------
+// ---------- 7. Anunciantes ----------
+// Unión de propiedades que comparten alguna clave (teléfono o perfil).
+const padre = unicos.map((_, i) => i);
+const raiz = (i) => (padre[i] === i ? i : (padre[i] = raiz(padre[i])));
+const duenoDeClave = new Map();
+unicos.forEach((u, i) => {
+	for (const k of u.claves) {
+		if (duenoDeClave.has(k)) padre[raiz(i)] = raiz(duenoDeClave.get(k));
+		else duenoDeClave.set(k, i);
+	}
+});
+const miembros = new Map();
+unicos.forEach((u, i) => {
+	if (u.claves.size) (miembros.get(raiz(i)) ?? miembros.set(raiz(i), []).get(raiz(i))).push(i);
+});
+// Identificador correlativo (no derivado del teléfono): 1 = el que tiene más avisos.
+const grupos = [...miembros.values()].sort((a, b) => b.length - a.length);
+const anuncianteDe = new Map();
+grupos.forEach((g, n) => {
+	for (const i of g) anuncianteDe.set(i, { id: n + 1, avisos: g.length });
+});
+const conVarios = grupos.filter((g) => g.length > 1);
+reporte.anunciantes = {
+	identificados: grupos.length,
+	con_varios_avisos: conVarios.length,
+	avisos_de_anunciantes_con_varios: conVarios.reduce((s, g) => s + g.length, 0),
+	avisos_sin_datos_de_contacto: unicos.length - grupos.reduce((s, g) => s + g.length, 0),
+};
+
+// ---------- 8. Salida ----------
 const propiedades = unicos.map((u, i) => ({
 	id: i + 1,
 	operacion: u.operacion,
@@ -140,6 +179,7 @@ const propiedades = unicos.map((u, i) => ({
 	fuentes: [...new Map(u.fuentes.map((f) => [f.fuente, f])).values()],
 	publicado: u.publicado,
 	estacion: estacionMasCercana(u),
+	anunciante: anuncianteDe.get(i) ?? null,
 }));
 
 reporte.publicados = propiedades.length;

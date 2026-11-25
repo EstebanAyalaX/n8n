@@ -24,6 +24,24 @@
 		`Depuración: ${num.format(reporte.recibidos)} anuncios recibidos · ${reporte.duplicados_fusionados} duplicados fusionados · ${reporte.descartados.precio_falso} precios falsos y ${reporte.descartados.bajo_minimo} bajo el precio mínimo descartados · ` +
 		`${reporte.telefonos_ocultos} teléfonos ocultos · actualizado ${fecha}`;
 
+	// ---------- Anunciantes con varios avisos ----------
+	const ra = reporte.anunciantes;
+	const anunciantes = new Map();
+	for (const p of propiedades) if (p.anunciante) anunciantes.set(p.anunciante.id, p.anunciante.avisos);
+	const conVarios = [...anunciantes].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]);
+	const rankingEl = document.getElementById('ranking');
+	rankingEl.querySelector('summary').textContent =
+		`${ra.con_varios_avisos} anunciantes publican varias propiedades (${ra.avisos_de_anunciantes_con_varios} de ${num.format(propiedades.length)} avisos)`;
+	rankingEl.querySelector('.ranking-lista').innerHTML = conVarios
+		.map(([id, n]) => `<button type="button" class="etiqueta anunciante" data-anunciante="${id}">Anunciante ${id} · ${n} avisos</button>`)
+		.join('');
+	const etiquetaAnunciante = (p) =>
+		!p.anunciante
+			? '<span class="etiqueta">Sin datos del anunciante</span>'
+			: p.anunciante.avisos > 1
+				? `<button type="button" class="etiqueta anunciante" data-anunciante="${p.anunciante.id}" title="Ver todos sus avisos">Anunciante ${p.anunciante.id} · ${p.anunciante.avisos} avisos</button>`
+				: '<span class="etiqueta">Anunciante con 1 aviso</span>';
+
 	const comunas = [...new Set(propiedades.map((p) => p.comuna))].sort();
 	const selComuna = form.elements.comuna;
 	for (const c of comunas) selComuna.add(new Option(c, c));
@@ -69,6 +87,7 @@
 			<div><strong>${esc(p.titulo)}</strong></div>
 			<div>${esc(p.direccion ?? p.sector)} · ${esc(p.comuna)}</div>
 			<div>${p.m2 ? `${p.m2} m² · ` : ''}Metro ${esc(p.estacion.nombre)} a ${distancia(p.estacion.distancia)}</div>
+			<div>${p.anunciante ? (p.anunciante.avisos > 1 ? `Anunciante ${p.anunciante.id} · ${p.anunciante.avisos} avisos` : 'Anunciante con 1 aviso') : 'Sin datos del anunciante'}</div>
 			<div style="margin-top:6px;color:#5b6b73">${esc(p.descripcion)}</div>`;
 	}
 
@@ -87,6 +106,9 @@
 				(!f.dormitorios || p.dormitorios >= Number(f.dormitorios)) &&
 				(!f.metro || p.estacion.distancia <= Number(f.metro)) &&
 				(!f.validacion || (f.validacion === 'exacta' ? p.ubicacion === 'exacta' : p.validacion === f.validacion)) &&
+				(!f.anunciante ||
+					(f.anunciante === 'sin' ? !p.anunciante : f.anunciante === 'uno' ? p.anunciante?.avisos === 1 : p.anunciante?.avisos > 1)) &&
+				(!f.anunciante_id || p.anunciante?.id === Number(f.anunciante_id)) &&
 				(!f.q ||
 					[p.titulo, p.sector, p.direccion, p.comuna, p.estacion.nombre, p.descripcion].join(' ').toLowerCase().includes(f.q)),
 		);
@@ -111,6 +133,12 @@
 		cluster.addLayers(resultados.map((p) => marcadores.get(p.id)));
 
 		conteoEl.textContent = `${num.format(resultados.length)} ${resultados.length === 1 ? 'propiedad' : 'propiedades'} en ${f.operacion}`;
+		const chip = document.getElementById('filtro-anunciante');
+		chip.hidden = !f.anunciante_id;
+		if (f.anunciante_id) {
+			const total = anunciantes.get(Number(f.anunciante_id)) ?? 0;
+			chip.innerHTML = `<span>Mostrando solo avisos del <strong>Anunciante ${esc(f.anunciante_id)}</strong> (${total} en total entre arriendo y venta)</span><button type="button" id="quitar-anunciante" aria-label="Quitar filtro de anunciante">✕</button>`;
+		}
 		listaEl.innerHTML = resultados.length ? '' : '<p class="vacio">No hay propiedades con estos filtros.</p>';
 		mostrados = 0;
 		pintarMas();
@@ -141,6 +169,7 @@
 				<span class="etiqueta metro">Metro ${esc(p.estacion.nombre)} · ${distancia(p.estacion.distancia)}</span>
 				<span class="etiqueta ${claseValidacion(p.validacion)}">${textoValidacion[p.validacion]}</span>
 			</div>
+			<div class="etiquetas">${etiquetaAnunciante(p)}</div>
 			<div class="fuentes">${p.fuentes.length > 1 ? `Publicado en ${p.fuentes.length} fuentes: ` : 'Fuente: '}${esc(nombresFuentes)}</div>
 			<a class="ver-original" ${url ? `href="${esc(url)}" target="_blank" rel="noopener"` : 'aria-disabled="true" title="Anuncio de ejemplo sin enlace"'}>Ver anuncio original ↗</a>
 		</article>`;
@@ -159,8 +188,19 @@
 		}
 	}
 
+	function filtrarAnunciante(id) {
+		form.elements.anunciante_id.value = id;
+		aplicar();
+		document.querySelector('.lista-wrap').scrollTo({ top: 0, behavior: 'smooth' });
+	}
+	document.addEventListener('click', (e) => {
+		const b = e.target.closest('[data-anunciante]');
+		if (b) return filtrarAnunciante(b.dataset.anunciante);
+		if (e.target.closest('#quitar-anunciante')) filtrarAnunciante('');
+	});
+
 	listaEl.addEventListener('click', (e) => {
-		if (e.target.closest('a')) return;
+		if (e.target.closest('a, [data-anunciante]')) return;
 		const t = e.target.closest('.tarjeta');
 		if (t) resaltar(Number(t.dataset.id));
 	});

@@ -122,3 +122,13 @@ body { margin: 0; display: flex; flex-direction: column; height: 100vh; }
 	.cabecera { flex-direction: column; align-items: flex-start; }
 	.filtros { position: static; }
 }
+
+button.etiqueta { font: inherit; font-size: 0.72rem; cursor: pointer; }
+.etiqueta.anunciante { background: #f3eefc; color: #5b3a99; border-color: #dcd0f2; }
+.etiqueta.anunciante:hover { border-color: #5b3a99; }
+.ranking { margin: 0 0 12px; font-size: 0.8rem; background: #fff; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 12px; }
+.ranking summary { cursor: pointer; font-weight: 600; color: #5b3a99; }
+.ranking-nota { color: var(--suave); margin: 8px 0; }
+.ranking-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+.filtro-activo { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; background: #f3eefc; color: #3d2670; font-size: 0.82rem; }
+.filtro-activo button { margin-left: auto; border: 0; background: none; cursor: pointer; font-size: 0.9rem; color: inherit; }

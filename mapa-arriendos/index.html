@@ -46,6 +46,13 @@
 			<option value="validado">Solo validadas</option>
 			<option value="exacta">Con ubicación exacta</option>
 		</select>
+		<select name="anunciante" aria-label="Anunciante">
+			<option value="">Anunciante: todos</option>
+			<option value="uno">Con un solo aviso</option>
+			<option value="varios">Con varios avisos</option>
+			<option value="sin">Sin datos de contacto</option>
+		</select>
+		<input type="hidden" name="anunciante_id" />
 		<input name="q" type="search" class="buscar" placeholder="Buscar sector, calle, estación…" aria-label="Buscar" />
 		<button type="reset" class="limpiar" title="Limpiar filtros" aria-label="Limpiar filtros">✕</button>
 	</form>
@@ -73,6 +80,12 @@
 				</select>
 			</div>
 			<p class="depuracion" id="depuracion"></p>
+			<details class="ranking" id="ranking">
+				<summary></summary>
+				<p class="ranking-nota">Avisos agrupados por teléfono o perfil del anunciante. Contamos propiedades distintas (arriendo y venta); los duplicados entre fuentes cuentan una vez.</p>
+				<div class="ranking-lista"></div>
+			</details>
+			<p class="filtro-activo" id="filtro-anunciante" hidden></p>
 			<div id="lista" class="lista"></div>
 			<button id="mas" class="mas" hidden>Ver más</button>
 		</section>

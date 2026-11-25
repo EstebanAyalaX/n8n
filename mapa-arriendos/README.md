@@ -31,6 +31,7 @@ fuentes → data/crudos-*.json → scripts/depurar.mjs → data/propiedades.js �
 | Precio | Arriendos desde **$400.000/mes** y ventas desde **UF 1.500**, sin tope superior (`MINIMO` en el script). Se descartan precios vacíos, ≤ 0 o gancho (`11111`, `1234…`, `9999…`). |
 | Duplicados | Misma operación, tipo, dormitorios y baños, precio ±2 %, m² ±5 % y a menos de 200 m (o mismo sector si uno no tiene coordenadas). Se fusionan y se guardan todas las fuentes. |
 | Ubicación | Con coordenadas y número de calle → **validada**; calle sin número → **parcial**; solo sector → **aproximada** (se ubica en el centro del sector). |
+| Anunciante | Agrupa avisos con el mismo teléfono o el mismo perfil en la fuente (`perfil_anunciante`). El teléfono solo se usa para agrupar: no se guarda ni se publica. A cada grupo se le da un número correlativo (Anunciante 1 = el que más avisos tiene). |
 | Metro | Calcula la estación más cercana y la distancia (coordenadas de estaciones aproximadas, en `scripts/geo.mjs`). |
 
 ### Formato de un anuncio crudo
@@ -38,6 +39,7 @@ fuentes → data/crudos-*.json → scripts/depurar.mjs → data/propiedades.js �
 ```json
 {
   "id_fuente": "abc123", "fuente": "Portal", "url": "https://…",
+  "perfil_anunciante": "Portal:u1234",
   "titulo": "Depto 2D 1B en Recreo", "descripcion": "…",
   "operacion": "arriendo", "tipo": "Departamento",
   "precio": "$450.000", "dormitorios": 2, "banos": 1, "m2": 55,
@@ -47,11 +49,12 @@ fuentes → data/crudos-*.json → scripts/depurar.mjs → data/propiedades.js �
 }
 ```
 
-`precio` acepta `"$450.000"`, `"450 mil"`, `"UF 3.200"` o un número. `lat`/`lng` y `direccion` pueden ser `null`.
+`precio` acepta `"$450.000"`, `"450 mil"`, `"UF 3.200"` o un número. `lat`/`lng`, `direccion` y `perfil_anunciante` pueden ser `null`.
 
 ## Funciones de la página
 
 - Arriendo / Venta, comuna, tipo, dormitorios, distancia al metro, validación y búsqueda libre (sin filtro de precio).
+- Filtro por anunciante (un solo aviso / varios avisos / sin datos) y lista de anunciantes con varias propiedades; clic en uno muestra todos sus avisos.
 - Orden por precio, cercanía al metro, más recientes o precio por m².
 - Clic en una tarjeta → el mapa va al anuncio; clic en el mapa → resalta la tarjeta.
 - Los filtros quedan en la URL, así se puede compartir una búsqueda.

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Radar FRONTERA</title>
+	<link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+	<link rel="stylesheet" href="vendor/geoman/leaflet-geoman.css" />
+	<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<header class="cabecera">
+		<h1>Radar <span>FRONTERA</span></h1>
+		<p>Farming territorial · arriendos desde $400.000 · eje Metro Valparaíso</p>
+	</header>
+
+	<main class="cuerpo">
+		<aside class="panel">
+			<section>
+				<div class="titulo-seccion">
+					<h2>Zonas</h2>
+					<button id="btn-dibujar" class="primario">+ Dibujar zona</button>
+				</div>
+				<p id="ayuda-dibujo" class="ayuda" hidden>
+					Haz clic en el mapa para marcar cada esquina. Para cerrar, haz clic en el primer punto.
+					<button id="btn-cancelar-dibujo" class="enlace">Cancelar</button>
+				</p>
+				<ul id="lista-zonas" class="lista-zonas"></ul>
+			</section>
+
+			<section>
+				<h2>Estaciones Metro Valparaíso</h2>
+				<p id="estado-estaciones" class="ayuda"></p>
+				<button id="btn-osm">Actualizar desde OpenStreetMap</button>
+			</section>
+		</aside>
+
+		<div id="mapa"></div>
+	</main>
+
+	<dialog id="dialogo-zona">
+		<form method="dialog" id="form-zona">
+			<h3 id="dialogo-titulo">Nueva zona</h3>
+			<label>Nombre <input name="nombre" required maxlength="60" autocomplete="off" /></label>
+			<label>Color <input name="color" type="color" value="#e4572e" /></label>
+			<p id="dialogo-error" class="error" hidden></p>
+			<div class="acciones">
+				<button value="cancelar" formnovalidate>Cancelar</button>
+				<button value="guardar" class="primario">Guardar</button>
+			</div>
+		</form>
+	</dialog>
+
+	<script src="vendor/leaflet/leaflet.js"></script>
+	<script src="vendor/geoman/leaflet-geoman.min.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>
